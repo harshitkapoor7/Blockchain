@@ -37,6 +37,12 @@ body{
     margin: 10%;
 }
 
+.ValidationToggle {
+    margin-left: 1250px;
+    margin-right: auto;
+    margin-top: -50px;
+}
+
 a{
     color: #e66;
     text-decoration: underline;

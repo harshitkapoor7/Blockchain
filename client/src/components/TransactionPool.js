@@ -16,10 +16,10 @@ class TransactionPool extends Component{
     }
 
     fetchMineTransactions = () =>{
-        fetch(`${document.location.origin}/api/mine-transactions`)
+        fetch(`${document.location.origin}/api/mine-validator-transactions`)
         .then(response => {
             if(response.status === 200){
-                alert('Success');
+                alert(response.json());
                 history.push('/blocks');
             }
             else{

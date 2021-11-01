@@ -29,8 +29,18 @@ class TransactionPool{
         );
     }
 
-    clearBlockchainTransactions({ chain }){
-        for(let i=1;i<chain.length;i++){
+    deleteTransaction(transactionId) {
+        if(this.transactionMap[transactionId]){
+            delete this.transactionMap[transactionId];
+        }
+    }
+
+    clearBlockchainTransactions({ transactionId }){
+
+        if(this.transactionMap[transactionId]){
+            delete this.transactionMap[transactionId];
+        }
+        /*for(let i=1;i<chain.length;i++){
             const block = chain[i];
 
             for(let transaction of block.data){
@@ -38,7 +48,7 @@ class TransactionPool{
                     delete this.transactionMap[transaction.id];
                 }
             }
-        }
+        }*/
     }
 }
 

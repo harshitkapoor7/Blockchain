@@ -14,7 +14,18 @@ class Block {
 
 
     static genesis() {
-        return new this(GENESIS_DATA);
+        let genesisBlock = new this(GENESIS_DATA);
+        genesisBlock.validatorsMap = new Map();
+        return genesisBlock;
+    }
+
+    static createBlock({ transaction }) {
+        let timestamp = Date.now();
+        let hash = cryptoHash(timestamp, transaction);
+
+        return new this({
+            timestamp, lastHash: '', data: transaction, difficulty: '', nonce: '', hash
+        });
     }
 
     static mineBlock({ lastBlock, data }) {

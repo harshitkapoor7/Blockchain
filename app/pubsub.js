@@ -10,14 +10,18 @@ const credentials = {
 const CHANNELS = {
     TEST: 'TEST',
     BLOCKCHAIN: 'BLOCKCHAIN',
-    TRANSACTION: 'TRANSACTION'
+    TRANSACTION: 'TRANSACTION',
+    VALIDATORS: 'VALIDATORS',
+    VALIDATORSCCR: 'VALIDATORSCCR'
 };
 
 class PubSub {
-    constructor({ blockchain, transactionPool, wallet }) {
+    constructor({ blockchain, transactionPool, wallet, validators, validatorsCCR }) {
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
         this.wallet = wallet;
+        this.validators = validators;
+        this.validatorsCCR = validatorsCCR;
 
         this.pubnub = new PubNub(credentials);
 
@@ -26,10 +30,10 @@ class PubSub {
         this.pubnub.addListener(this.listener());
     }
 
-    broadcastChain() {
+    broadcastChain(chain) {
         this.publish({
             channel: CHANNELS.BLOCKCHAIN,
-            message: JSON.stringify(this.blockchain.chain)
+            message: JSON.stringify(chain)
         });
     }
 
@@ -40,27 +44,56 @@ class PubSub {
           });
     }
 
+    broadcastValidators(validatorId){
+        this.publish({
+            channel: CHANNELS.VALIDATORS,
+            message: JSON.stringify(validatorId)
+          });
+    }
+
+    broadcastValidatorsCCR(map){
+        this.publish({
+            channel: CHANNELS.VALIDATORSCCR,
+            message: JSON.stringify(map)
+          });
+    }
+
     listener() {
         return {
             message: messageObject => {
                 const { channel, message } = messageObject;
-                console.log(`Message received. Channel: ${channel}. Message: ${message}`);
+                
+                    console.log(`Message received. Channel: ${channel}. Message: ${message}.`);
                 
                 const parsedMessage = JSON.parse(message);
                 switch(channel){
+                    case CHANNELS.VALIDATORSCCR:
+                        console.log('Parsed',parsedMessage);
+                        this.blockchain.replaceChain(parsedMessage, this.validatorsCCR, true);
+                    case CHANNELS.VALIDATORS:
+                        // console.log('Validators',this.blockchain.chain[0]);
+
+                        if(parsedMessage != this.wallet.publicKey) {
+                            this.validators.addValidator(parsedMessage);
+                            this.validatorsCCR.distributeCCR(this.validators.validators);
+                            this.blockchain.addValidator(parsedMessage);
+                        }
+                        break;
                     case CHANNELS.BLOCKCHAIN:
-                        this.blockchain.replaceChain(parsedMessage, true, () => {
-                            this.transactionPool.clearBlockchainTransactions({chain: parsedMessage});
-                        });
+                        console.log('Parsed',this.blockchain.chain[0]);
+                        // this.blockchain.replaceChain(parsedMessage, this.validatorsCCR, true);
+                        this.blockchain.replaceChain(parsedMessage, this.validatorsCCR, true);
                         break;
                     case CHANNELS.TRANSACTION:
-                        if (!this.transactionPool.existingTransaction({
+                        this.transactionPool.setTransaction(parsedMessage);
+                        /*if (!this.transactionPool.existingTransaction({
                             inputAddress: this.wallet.publicKey
                           })) {
                             this.transactionPool.setTransaction(parsedMessage);
-                          }
+                          }*/
               
                         break;
+                    
                     default:
                         return;
                 }

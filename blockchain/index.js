@@ -9,17 +9,64 @@ class Blockchain {
         this.chain = [Block.genesis()];
     }
 
-    addBlock({ data }) {
+    addValidator(validatorId){
+        console.log('In add validator', this.chain[0]);
+        if(!this.chain[0].validatorsMap.has(validatorId)) {
+            this.chain[0].validatorsMap.set(validatorId,[]);
+        }
+    }
+
+    addValidatedBlock({ transaction, validatorId}) {
+        let existingValidatorTransactions = this.chain[0].validatorsMap.get(validatorId);
+        let newBlock = Block.createBlock({ transaction });
+        existingValidatorTransactions.push(newBlock);
+        this.chain[0].validatorsMap.set(validatorId,existingValidatorTransactions);
+    }
+
+    /*addBlock({ data }) {
         const newBlock = Block.mineBlock({
             lastBlock: this.chain[this.chain.length - 1],
             data
         });
 
         this.chain.push(newBlock);
-    }
+    }*/
 
-    replaceChain(chain, validateTransactions, onSuccess) {
-        if (chain.length <= this.chain.length) {
+    replaceChain(validatorsTransactionMap, validatorsCCR, validateTransactions, onSuccess) {
+        console.log('Before updation', this.chain);
+        console.log('Chain updated', validatorsTransactionMap);
+
+        if(validatorsTransactionMap && validatorsTransactionMap.size) {
+            for(let [key, value] of validatorsTransactionMap) {
+                let validator = key;
+                if(validatorsCCR.validatorMap.has(validator)) {
+                    let range = validatorsCCR.validatorMap.get(validator);
+                    for(let i=0;i<value.length;i++) {
+                        let currentTransactionId = value[i].id;
+                        let hash = this.transactionIdHash(currentTransactionId);
+                        if(range[0]<=hash && range[1]>=hash) {
+                            
+                        }
+                        else {
+                            return;
+                        }
+                    }
+                }
+                else {
+                    return;
+                }
+            }
+        }
+        console.log('Chain updated 2', validatorsTransactionMap);
+
+        if (onSuccess)
+            onSuccess();
+        if(validatorsTransactionMap)
+            this.chain[0].validatorsMap = validatorsTransactionMap;
+        
+        console.log('After updation', this.chain);
+
+        /*if (chain.length <= this.chain.length) {
             console.error('The incoming chain must be longer');
             return;
         }
@@ -35,8 +82,16 @@ class Blockchain {
 
         if (onSuccess)
             onSuccess();
-        console.log('replacing chain with', chain);
-        this.chain = chain;
+        // console.log('replacing chain with', chain);
+        this.chain = chain;*/
+    }
+
+    transactionIdHash(transactionId){
+        let num = 0;
+        for(let i=0;i<transactionId.length;i++) {
+            num+=transactionId.charCodeAt(i);
+        }
+        return num%62;
     }
 
     validTransactionData({ chain }) {

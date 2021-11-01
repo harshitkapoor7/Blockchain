@@ -20,12 +20,14 @@ class Block extends Component {
             return (
                 <div>
                     {
-                        data.map(transaction => (
+
+                        <Transaction transaction={data}/>
+                        /*data.map(transaction => (
                             <div key={transaction.id}>
                                 <hr/>
                                 <Transaction transaction={transaction} />
                             </div>
-                        ))
+                        ))*/
                     }
                     <br/>
                     <Button
