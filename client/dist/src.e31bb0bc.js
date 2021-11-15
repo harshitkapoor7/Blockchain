@@ -49946,6 +49946,18 @@ var App = /*#__PURE__*/function (_Component) {
       }).then(function (response) {
         return response.json();
       }); //console.log('hello', pubsub);
+    }, _this.test = function () {
+      fetch("".concat(document.location.origin, "/api/test"), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          validatorId: _this.state.walletInfo.address
+        })
+      }).then(function (response) {
+        return response.json();
+      });
     }, _temp));
   }
 
@@ -49985,7 +49997,11 @@ var App = /*#__PURE__*/function (_Component) {
         onstyle: "danger",
         offstyle: "info",
         onChange: this.toggleValidatorInterest
-      }))), _react.default.createElement("img", {
+      })), _react.default.createElement(_reactBootstrap.Button, {
+        variant: "danger",
+        size: "sm",
+        onClick: this.test
+      }, "Show Less")), _react.default.createElement("img", {
         className: "logo",
         src: _logo.default
       }), _react.default.createElement("br", null), _react.default.createElement("div", null, "Welcome to the blockchain"), _react.default.createElement("br", null), _react.default.createElement("div", null, _react.default.createElement(_reactRouterDom.Link, {
@@ -50232,7 +50248,7 @@ var Blocks = /*#__PURE__*/function (_Component) {
   }, {
     key: "render",
     value: function render() {
-      console.log('this.state', this.state);
+      // console.log('this.state', this.state);
       return _react.default.createElement("div", null, _react.default.createElement("div", null, _react.default.createElement(_reactRouterDom.Link, {
         to: "/"
       }, "Home")), _react.default.createElement("br", null), _react.default.createElement("h3", null, "Blocks"), this.state.blocks.map(function (block) {
@@ -50346,7 +50362,7 @@ var ConductTransaction = /*#__PURE__*/function (_Component) {
   _createClass(ConductTransaction, [{
     key: "render",
     value: function render() {
-      console.log('this.state', this.state);
+      // console.log('this.state',this.state);
       return _react.default.createElement("div", {
         className: "ConductTransaction"
       }, _react.default.createElement(_reactRouterDom.Link, {
@@ -50639,7 +50655,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53397" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57010" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

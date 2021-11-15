@@ -28,7 +28,7 @@ class ConductTransaction extends Component {
     }
 
     render() {
-        console.log('this.state',this.state);
+        // console.log('this.state',this.state);
         return (
             <div className='ConductTransaction'>
                 <Link to='/'>Home</Link>

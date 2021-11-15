@@ -20,6 +20,14 @@ class App extends Component {
         //console.log('hello', pubsub);
     };
 
+    test = () => {
+        fetch(`${document.location.origin}/api/test`,{
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json'},
+            body: JSON.stringify({ validatorId: this.state.walletInfo.address})
+        }).then( response => response.json())
+    };
+
     componentDidMount() {
         fetch(`${document.location.origin}/api/wallet-info`)
             .then(response => response.json())
@@ -38,6 +46,12 @@ class App extends Component {
                             onstyle="danger" offstyle="info" 
                             onChange={this.toggleValidatorInterest} />
                     </div>
+                    <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={this.test}>
+                        Show Less
+                    </Button>
                 </div>
                 <img className='logo' src={logo}></img>
                 <br/>

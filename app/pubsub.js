@@ -30,10 +30,10 @@ class PubSub {
         this.pubnub.addListener(this.listener());
     }
 
-    broadcastChain(chain) {
+    broadcastChain(validator) {
         this.publish({
             channel: CHANNELS.BLOCKCHAIN,
-            message: JSON.stringify(chain)
+            message: JSON.stringify(validator)
         });
     }
 
@@ -44,10 +44,10 @@ class PubSub {
           });
     }
 
-    broadcastValidators(validatorId){
+    broadcastValidators(chain){
         this.publish({
             channel: CHANNELS.VALIDATORS,
-            message: JSON.stringify(validatorId)
+            message: JSON.stringify(chain)
           });
     }
 
@@ -63,12 +63,11 @@ class PubSub {
             message: messageObject => {
                 const { channel, message } = messageObject;
                 
-                    console.log(`Message received. Channel: ${channel}. Message: ${message}.`);
+                   // console.log(`Message received. Channel: ${channel}. Message: ${message}.`);
                 
                 const parsedMessage = JSON.parse(message);
                 switch(channel){
                     case CHANNELS.VALIDATORSCCR:
-                        console.log('Parsed',parsedMessage);
                         this.blockchain.replaceChain(parsedMessage, this.validatorsCCR, true);
                     case CHANNELS.VALIDATORS:
                         // console.log('Validators',this.blockchain.chain[0]);
@@ -80,9 +79,10 @@ class PubSub {
                         }
                         break;
                     case CHANNELS.BLOCKCHAIN:
-                        console.log('Parsed',this.blockchain.chain[0]);
                         // this.blockchain.replaceChain(parsedMessage, this.validatorsCCR, true);
-                        this.blockchain.replaceChain(parsedMessage, this.validatorsCCR, true);
+                        this.blockchain.replaceChain(parsedMessage, this.validatorsCCR, () => {
+                            this.transactionPool.clearBlockchainTransactions({ validatorTransactionMap: parsedMessage });
+                        });
                         break;
                     case CHANNELS.TRANSACTION:
                         this.transactionPool.setTransaction(parsedMessage);

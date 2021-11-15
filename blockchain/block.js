@@ -15,7 +15,7 @@ class Block {
 
     static genesis() {
         let genesisBlock = new this(GENESIS_DATA);
-        genesisBlock.validatorsMap = new Map();
+        genesisBlock.validatorsMap = {};
         return genesisBlock;
     }
 

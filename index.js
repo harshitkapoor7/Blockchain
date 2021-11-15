@@ -9,7 +9,7 @@ const Wallet = require('./wallet');
 const TransactionMiner = require('./app/transaction-miner');
 const Validators = require('./validators');
 const ValidatorsCCR = require('./validators/validatorsCCR');
-
+const fs = require('fs');
 
 const app = express();
 const blockchain = new Blockchain();
@@ -30,7 +30,8 @@ app.get('/api/blocks', (req, res) => {
     let chain = [];
     let transactionsMap = blockchain.chain[0].validatorsMap;
     if(transactionsMap) {
-        for(let value of transactionsMap.values()) {
+        for(let key of Object.keys(transactionsMap)) {
+            let value =  transactionsMap[key];
             for(let i=0;i<value.length;i++) {
                 chain.push(value[i]);
             }
@@ -40,18 +41,9 @@ app.get('/api/blocks', (req, res) => {
 });
 
 app.get('/api/chain', (req, res) => {
-    res.json(blockchain.chain);
+    res.json(blockchain.chain[0].validatorsMap);
 });
 
-
-/*app.post('/api/mine', (req, res) => {
-    const { data } = req.body;
-    blockchain.addBlock({ data });
-
-    pubsub.broadcastChain();
-
-    res.redirect('/api/blocks');
-});*/
 
 app.post('/api/validators', (req, res) => {
     const { validatorId } = req.body;
@@ -59,28 +51,80 @@ app.post('/api/validators', (req, res) => {
     blockchain.addValidator(validatorId);
     pubsub.broadcastValidators(validatorId);
     validatorsCCR.distributeCCR(validators.validators);
-    //pubsub.broadcastValidatorsCCR(validatorId);
-    let today = new Date();
-    let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    let dateTime = date+' '+time;
-    console.log(dateTime,validatorId, validators);
-    console.log(dateTime, blockchain.chain[0]);
     res.json({ type: 'success', validatorId });
 });
 
 app.get('/api/validators', (req, res) => {
-    // validatorsCCR.distributeCCR(validators.validators);
-    // let transactionsToBeMined = transactionPool.validTransactions();
-    // console.log(transactionsToBeMined);
     res.json(blockchain.chain[0]);
+});
+
+app.post('/api/test', (req, res) => {
+    let previousTime = Date.now();
+    let data = '';
+    let validatorId = 'a';
+    for(let j=1;j<=50;j++) {
+        let time = 0;
+        validatorId += 'b';
+        validators.addValidator(validatorId);
+        blockchain.addValidator(validatorId);
+        pubsub.broadcastValidators(validatorId);
+
+        for(let i=1;i<=20;i++) {
+            const amount = 1;
+            const recipient = 'test';
+            let chain = [];
+            let transactionsMap = blockchain.chain[0].validatorsMap;
+            for(let key of Object.keys(transactionsMap)) {
+                let value =  transactionsMap[key];
+                for(let i=0;i<value.length;i++) {
+                    chain.push(value[i]);
+                }
+            }
+            let transaction = transactionPool
+                .existingTransaction({ inputAddress: wallet.publicKey });
+
+            try {
+                if (transaction) {
+                    transaction.update({ senderWallet: wallet, recipient, amount });
+                }
+                else {
+                    transaction = wallet.createTransaction({ recipient, amount, chain});
+                }
+            } catch (error) {
+                return res.status(400).json({ type: 'error', message: error.message });
+            };
+
+            transactionPool.setTransaction(transaction);
+
+            pubsub.broadcastTransaction(transaction);
+
+            blockchain.addValidatedBlock({ transaction, validatorId: wallet.publicKey});
+            transactionPool.deleteTransaction(transaction.id);
+            pubsub.broadcastChain(blockchain.chain[0].validatorsMap);
+            // console.log(i,'Block added. Time taken: ',Date.now()-previousTime,' ms');
+            time += Date.now()-previousTime;
+            previousTime = Date.now();
+        }
+        data += j;
+        data += ' : ';
+        data += time/25;
+        data += '\n';
+    }
+    // console.log('Average time taken: ', time/25, ' ms');
+    
+    fs.writeFile('Output.txt', data, (err) => {
+      
+        // In case of a error throw err.
+        if (err) throw err;
+    })
 });
 
 app.post('/api/transact', (req, res) => {
     const { amount, recipient } = req.body;
     let chain = [];
     let transactionsMap = blockchain.chain[0].validatorsMap;
-    for(let value of transactionsMap.values()) {
+    for(let key of Object.keys(transactionsMap)) {
+        let value =  transactionsMap[key];
         for(let i=0;i<value.length;i++) {
             chain.push(value[i]);
         }
@@ -117,7 +161,6 @@ app.get('/api/mine-transactions', (req, res) => {
 });
 
 app.get('/api/mine-validator-transactions', (req, res) => {
-    //transactionMiner.mineTransactions();
     let allTransactions = transactionPool.validTransactions();
     let transactionsToBeMined = [];
     let flag = 0;
@@ -133,8 +176,7 @@ app.get('/api/mine-validator-transactions', (req, res) => {
             }
         }
     }
-    console.log('Printing in validator mine',blockchain.chain[0].validatorsMap);
-    setTimeout(() => pubsub.broadcastChain(blockchain.chain[0]),2000);
+    pubsub.broadcastChain(blockchain.chain[0].validatorsMap);
     if(flag === 0) {
        res.json('No transactions to be mined');
     }
@@ -142,14 +184,14 @@ app.get('/api/mine-validator-transactions', (req, res) => {
         res.json('');
     }
     
-    //res.redirect('/api/blocks');
 });
 
 app.get('/api/wallet-info', (req, res) => {
     const address = wallet.publicKey;
     let chain = [];
     let transactionsMap = blockchain.chain[0].validatorsMap;
-    for(let value of transactionsMap.values()) {
+    for(let key of Object.keys(transactionsMap)) {
+        let value =  transactionsMap[key];
         for(let i=0;i<value.length;i++) {
             chain.push(value[i]);
         }
@@ -168,18 +210,14 @@ const syncWithRootState = () => {
     request({ url: `${ROOT_NODE_ADDRESS}/api/chain` }, (error, response, body) => {
         if (!error && response.statusCode === 200) {
             const rootChain = JSON.parse(body);
-
-           //  console.log('replace chain on a sync with', rootChain);
             
-            blockchain.replaceChain(rootChain.validatorsMap);
+            blockchain.replaceChain(rootChain);
         }
     });
 
     request({ url: `${ROOT_NODE_ADDRESS}/api/transaction-pool-map` }, (error, response, body) => {
         if (!error && response.statusCode === 200) {
             const rootTransactionPoolMap = JSON.parse(body);
-
-            // console.log('replace transaction pool map on a sync with', rootTransactionPoolMap);
             transactionPool.setMap(rootTransactionPoolMap);
         }
     });

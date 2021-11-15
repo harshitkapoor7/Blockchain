@@ -10,17 +10,16 @@ class Blockchain {
     }
 
     addValidator(validatorId){
-        console.log('In add validator', this.chain[0]);
-        if(!this.chain[0].validatorsMap.has(validatorId)) {
-            this.chain[0].validatorsMap.set(validatorId,[]);
+        if(!this.chain[0].validatorsMap.hasOwnProperty(validatorId)) {
+            this.chain[0].validatorsMap[validatorId] = [];
         }
     }
 
     addValidatedBlock({ transaction, validatorId}) {
-        let existingValidatorTransactions = this.chain[0].validatorsMap.get(validatorId);
+        let existingValidatorTransactions = this.chain[0].validatorsMap[validatorId];
         let newBlock = Block.createBlock({ transaction });
         existingValidatorTransactions.push(newBlock);
-        this.chain[0].validatorsMap.set(validatorId,existingValidatorTransactions);
+        this.chain[0].validatorsMap[validatorId] = existingValidatorTransactions;
     }
 
     /*addBlock({ data }) {
@@ -32,12 +31,9 @@ class Blockchain {
         this.chain.push(newBlock);
     }*/
 
-    replaceChain(validatorsTransactionMap, validatorsCCR, validateTransactions, onSuccess) {
-        console.log('Before updation', this.chain);
-        console.log('Chain updated', validatorsTransactionMap);
-
+    replaceChain(validatorsTransactionMap, validatorsCCR, onSuccess) {
         if(validatorsTransactionMap && validatorsTransactionMap.size) {
-            for(let [key, value] of validatorsTransactionMap) {
+            for(let key of Object.keys(validatorsTransactionMap)) {
                 let validator = key;
                 if(validatorsCCR.validatorMap.has(validator)) {
                     let range = validatorsCCR.validatorMap.get(validator);
@@ -57,14 +53,11 @@ class Blockchain {
                 }
             }
         }
-        console.log('Chain updated 2', validatorsTransactionMap);
 
         if (onSuccess)
             onSuccess();
         if(validatorsTransactionMap)
             this.chain[0].validatorsMap = validatorsTransactionMap;
-        
-        console.log('After updation', this.chain);
 
         /*if (chain.length <= this.chain.length) {
             console.error('The incoming chain must be longer');
