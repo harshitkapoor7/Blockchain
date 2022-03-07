@@ -21,7 +21,7 @@ class App extends Component {
     };
 
     test = () => {
-        fetch(`${document.location.origin}/api/test`,{
+        fetch(`${document.location.origin}/api/test-node`,{
             method: 'POST',
             headers: { 'Content-Type': 'application/json'},
             body: JSON.stringify({ validatorId: this.state.walletInfo.address})

@@ -1,4 +1,6 @@
 const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose'); 
 const request = require('request');
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -24,7 +26,61 @@ const DEFAULT_PORT = 3000;
 const ROOT_NODE_ADDRESS = `http://localhost:${DEFAULT_PORT}`;
 
 app.use(bodyParser.json());
+app.use(express.urlencoded());
+app.use(cors());
 app.use(express.static(path.join(__dirname,'client/dist')));
+
+mongoose.connect('mongodb://localhost:27017/treechain', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+},() => { console.log("DB connection established" )})
+
+const userSchema = new mongoose.Schema({
+    name: String,
+    email: String,
+    password: String
+})
+
+const User = new mongoose.model("User", userSchema)
+
+//Routes
+app.post("/login", (req, res)=> {
+    const { email, password} = req.body
+    User.findOne({ email: email}, (err, user) => {
+        if(user){
+            if(password === user.password ) {
+                res.send({message: "Login Successfull", user: user})
+            } else {
+                res.send({ message: "Password didn't match"})
+            }
+        } else {
+            res.send({message: "User not registered"})
+        }
+    })
+}) 
+
+app.post("/register", (req, res)=> {
+    const { name, email, password} = req.body
+    User.findOne({email: email}, (err, user) => {
+        if(user){
+            res.send({message: "User already registerd"})
+        } else {
+            const user = new User({
+                name,
+                email,
+                password
+            })
+            user.save(err => {
+                if(err) {
+                    res.send(err)
+                } else {
+                    res.send( { message: "Successfully Registered, Please login now." })
+                }
+            })
+        }
+    })
+    
+}) 
 
 app.get('/api/blocks', (req, res) => {
     let chain = [];
@@ -58,18 +114,20 @@ app.get('/api/validators', (req, res) => {
     res.json(blockchain.chain[0]);
 });
 
+
+
 app.post('/api/test', (req, res) => {
     let previousTime = Date.now();
     let data = '';
     let validatorId = 'a';
-    for(let j=1;j<=50;j++) {
+    for(let j=1;j<=60;j++) {
         let time = 0;
         validatorId += 'b';
         validators.addValidator(validatorId);
         blockchain.addValidator(validatorId);
         pubsub.broadcastValidators(validatorId);
 
-        for(let i=1;i<=20;i++) {
+        for(let i=1;i<=10;i++) {
             const amount = 1;
             const recipient = 'test';
             let chain = [];
@@ -107,7 +165,7 @@ app.post('/api/test', (req, res) => {
         }
         data += j;
         data += ' : ';
-        data += time/25;
+        data += time;
         data += '\n';
     }
     // console.log('Average time taken: ', time/25, ' ms');
@@ -282,7 +340,16 @@ const PORT = PEER_PORT || DEFAULT_PORT;
 app.listen(PORT, () => {
     console.log(`listening at localhost:${PORT}`);
 
-    if (PORT !== DEFAULT_PORT) syncWithRootState();
+    if (PORT !== DEFAULT_PORT) {
+        let time = Date.now();
+        syncWithRootState();
+        console.log(Date.now()-time,' ms');
+        fs.writeFile('Output.txt', Date.now()-time, (err) => {
+      
+            // In case of a error throw err.
+            if (err) throw err;
+        })
+    }
 });
 
 module.exports.obj = pubsub;
