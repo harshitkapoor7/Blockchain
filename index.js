@@ -13,6 +13,7 @@ const Validators = require('./validators');
 const ValidatorsCCR = require('./validators/validatorsCCR');
 const fs = require('fs');
 
+
 const app = express();
 const blockchain = new Blockchain();
 const transactionPool = new TransactionPool();
@@ -36,14 +37,14 @@ mongoose.connect('mongodb://localhost:27017/treechain', {
 },() => { console.log("DB connection established" )})
 
 const userSchema = new mongoose.Schema({
-    name: String,
-    email: String,
-    password: String
-})
+    name: { type: String, required: true},
+    email: { type: String, required: true},
+    password: { type: String, required: true}
+});
 
-const User = new mongoose.model("User", userSchema)
-
+const User = new mongoose.model("user", userSchema);
 //Routes
+
 app.post("/login", (req, res)=> {
     const { email, password} = req.body
     User.findOne({ email: email}, (err, user) => {
@@ -344,11 +345,11 @@ app.listen(PORT, () => {
         let time = Date.now();
         syncWithRootState();
         console.log(Date.now()-time,' ms');
-        fs.writeFile('Output.txt', Date.now()-time, (err) => {
+        // fs.writeFile('Output.txt', Date.now()-time, (err) => {
       
             // In case of a error throw err.
-            if (err) throw err;
-        })
+            // if (err) throw err;
+        // })
     }
 });
 
